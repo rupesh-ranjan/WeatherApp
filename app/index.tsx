@@ -119,7 +119,7 @@ export default function HomeScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView>
             <ScrollView
                 contentContainerStyle={styles.root}
                 keyboardShouldPersistTaps="handled"

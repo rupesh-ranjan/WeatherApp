@@ -1,8 +1,17 @@
-import { useLocalSearchParams } from "expo-router";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DetailScreen() {
     const params = useLocalSearchParams();
+    const router = useRouter();
     const dayParam: any = params?.day || null;
     let day = null;
 
@@ -16,9 +25,11 @@ export default function DetailScreen() {
 
     if (!day) {
         return (
-            <View style={styles.container}>
-                <Text style={styles.title}>No data</Text>
-            </View>
+            <SafeAreaView>
+                <View style={styles.container}>
+                    <Text style={styles.title}>No data</Text>
+                </View>
+            </SafeAreaView>
         );
     }
 
@@ -29,39 +40,98 @@ export default function DetailScreen() {
         : null;
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Weather Details - {date}</Text>
+        <SafeAreaView>
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={styles.backButton}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
+                    >
+                        <Text style={styles.backChevron}>‹</Text>
+                        <Text style={styles.backText}>Back</Text>
+                    </TouchableOpacity>
 
-            <View style={styles.card}>
-                {icon && <Image source={{ uri: icon }} style={styles.icon} />}
-                <View style={{ marginLeft: 12 }}>
-                    <Text style={styles.dateText}>{date}</Text>
-                    <Text style={styles.condition}>{condition}</Text>
-                    <Text style={styles.temp}>Max: {day.day.maxtemp_c}°C</Text>
-                    <Text style={styles.temp}>Min: {day.day.mintemp_c}°C</Text>
-                    <Text style={styles.feels}>Avg: {day.day.avgtemp_c}°C</Text>
+                    <Text style={styles.screenTitle}>
+                        Weather Details - {date}
+                    </Text>
                 </View>
-            </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Hourly Overview</Text>
-
-                {day.hour?.map((h: any) => (
-                    <View key={h.time_epoch} style={styles.hourRow}>
-                        <Text style={styles.hourTime}>
-                            {h.time.split(" ")[1]}
+                <View style={styles.card}>
+                    {icon && (
+                        <Image source={{ uri: icon }} style={styles.icon} />
+                    )}
+                    <View style={{ marginLeft: 12 }}>
+                        <Text style={styles.dateText}>{date}</Text>
+                        <Text style={styles.condition}>{condition}</Text>
+                        <Text style={styles.temp}>
+                            Max: {day.day.maxtemp_c}°C
                         </Text>
-                        <Text style={styles.hourInfo}>
-                            {h.temp_c}°C • {h.condition?.text}
+                        <Text style={styles.temp}>
+                            Min: {day.day.mintemp_c}°C
+                        </Text>
+                        <Text style={styles.feels}>
+                            Avg: {day.day.avgtemp_c}°C
                         </Text>
                     </View>
-                ))}
-            </View>
-        </ScrollView>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Hourly Overview</Text>
+
+                    {day.hour?.map((h: any) => (
+                        <View key={h.time_epoch} style={styles.hourRow}>
+                            <Text style={styles.hourTime}>
+                                {h.time.split(" ")[1]}
+                            </Text>
+                            <Text style={styles.hourInfo}>
+                                {h.temp_c}°C • {h.condition?.text}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    headerRow: {
+        width: "100%",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        marginBottom: 8,
+    },
+    backButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        backgroundColor: "#f1f5fb",
+        borderWidth: 1,
+        borderColor: "#e6eefc",
+    },
+    backChevron: {
+        fontSize: 18,
+        marginRight: 6,
+        color: "#0b6efd",
+        lineHeight: 18,
+    },
+    backText: {
+        fontSize: 14,
+        color: "#0b6efd",
+        fontWeight: "600",
+    },
+    screenTitle: {
+        marginLeft: 12,
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#0b2545",
+    },
+
     container: { padding: 16, backgroundColor: "#fff" },
     title: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
     card: {
