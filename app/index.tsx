@@ -1,90 +1,63 @@
-import React from "react";
-import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import ForecastCard from "../src/components/ForecastCard";
+import SearchBar from "../src/components/SearchBar";
+import WeatherCard from "../src/components/WeatherCard";
 
 export default function HomeScreen() {
     return (
         <ScrollView contentContainerStyle={styles.root}>
             <View style={styles.header}>
                 <Text style={styles.title}>WeatherApp</Text>
-                <Text style={styles.subtitle}>
-                    Check current weather & 3-day forecast
-                </Text>
             </View>
 
-            <View style={styles.searchWrap}>
-                <TextInput
-                    placeholder="Search city (UI only)"
-                    style={styles.searchInput}
-                    editable={false}
-                />
-                <TouchableOpacity style={styles.searchBtn} activeOpacity={0.8}>
-                    <Text style={styles.searchBtnText}>Search</Text>
-                </TouchableOpacity>
-            </View>
+            <SearchBar />
 
-            <View style={styles.currentCard}>
-                <Image
-                    source={{
-                        uri: "https://www.example.png",
+            <WeatherCard
+                title="28°C — Sunny"
+                subtitle="New Delhi • Feels like 30°C"
+                iconUrl="https://cdn.weatherapi.com/weather/64x64/day/113.png"
+            />
+
+            <View style={{ marginTop: 20 }}>
+                <Text
+                    style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        marginBottom: 12,
                     }}
-                    style={styles.currentIcon}
-                />
-                <View style={styles.currentInfo}>
-                    <Text style={styles.currentTemp}>28°C</Text>
-                    <Text style={styles.currentCond}>
-                        Sunny • Feels like 30°C
-                    </Text>
-                    <Text style={styles.currentLocation}>New Delhi, India</Text>
-                </View>
-            </View>
+                >
+                    3-Day Forecast
+                </Text>
 
-            <View style={styles.forecastSection}>
-                <Text style={styles.sectionTitle}>3-Day Forecast</Text>
+                <View
+                    style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                    }}
+                >
+                    <ForecastCard
+                        date="Thu, 11 Dec"
+                        condition="Partly Cloudy"
+                        iconUrl="https://cdn.weatherapi.com/weather/64x64/day/116.png"
+                        max={30}
+                        min={20}
+                    />
 
-                <View style={styles.forecastRow}>
-                    <View style={styles.dayCard}>
-                        <Text style={styles.dayDate}>Thu, 11 Dec</Text>
-                        <Image
-                            source={{
-                                uri: "https://www.example.png",
-                            }}
-                            style={styles.dayIcon}
-                        />
-                        <Text style={styles.dayCond}>Partly Cloudy</Text>
-                        <Text style={styles.dayTemp}>H: 30° L: 20°</Text>
-                    </View>
+                    <ForecastCard
+                        date="Fri, 12 Dec"
+                        condition="Cloudy"
+                        iconUrl="https://cdn.weatherapi.com/weather/64x64/day/122.png"
+                        max={28}
+                        min={19}
+                    />
 
-                    <View style={styles.dayCard}>
-                        <Text style={styles.dayDate}>Fri, 12 Dec</Text>
-                        <Image
-                            source={{
-                                uri: "https://www.example.png",
-                            }}
-                            style={styles.dayIcon}
-                        />
-                        <Text style={styles.dayCond}>Cloudy</Text>
-                        <Text style={styles.dayTemp}>H: 28° L: 19°</Text>
-                    </View>
-
-                    <View style={styles.dayCard}>
-                        <Text style={styles.dayDate}>Sat, 13 Dec</Text>
-                        <Image
-                            source={{
-                                uri: "https://www.example.png",
-                            }}
-                            style={styles.dayIcon}
-                        />
-                        <Text style={styles.dayCond}>Showers</Text>
-                        <Text style={styles.dayTemp}>H: 26° L: 18°</Text>
-                    </View>
+                    <ForecastCard
+                        date="Sat, 13 Dec"
+                        condition="Showers"
+                        iconUrl="https://cdn.weatherapi.com/weather/64x64/day/308.png"
+                        max={26}
+                        min={18}
+                    />
                 </View>
             </View>
         </ScrollView>
