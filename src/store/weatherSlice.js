@@ -7,13 +7,19 @@ export const fetchForecast = createAsyncThunk(
     async ({ city, days = 3 }, { rejectWithValue }) => {
         try {
             const data = await getForecast(city, days);
+            const payloadToSave = {
+                timestamp: Date.now(),
+                data,
+                city,
+                days,
+            };
             await AsyncStorage.setItem(
                 "lastWeather",
-                JSON.stringify({ timestamp: Date.now(), data })
+                JSON.stringify(payloadToSave)
             );
             return data;
         } catch (err) {
-            const msg = err?.response?.data || err.message || "Unknown error";
+            const msg = err?.response?.data || err?.message || "Unknown error";
             return rejectWithValue(msg);
         }
     }
@@ -40,9 +46,9 @@ export const loadCached = createAsyncThunk(
             const raw = await AsyncStorage.getItem("lastWeather");
             if (!raw) return null;
             const parsed = JSON.parse(raw);
-            return parsed.data || null;
+            return parsed;
         } catch (err) {
-            return rejectWithValue(err.message || "Failed to load cache");
+            return rejectWithValue(err?.message || "Failed to load cache");
         }
     }
 );
@@ -54,6 +60,9 @@ const initialState = {
     error: null,
     suggestions: [],
     locationName: null,
+    _cachedTimestamp: null,
+    _cachedCity: null,
+    _cachedDays: null,
 };
 
 const weatherSlice = createSlice({
@@ -94,12 +103,17 @@ const weatherSlice = createSlice({
                 state.suggestions = action.payload || [];
             })
             .addCase(loadCached.fulfilled, (state, action) => {
-                if (action.payload) {
-                    state.current = action.payload.current || state.current;
+                const payload = action.payload;
+                if (payload && payload.data) {
+                    const data = payload.data;
+                    state.current = data.current || state.current;
                     state.forecast =
-                        action.payload.forecast?.forecastday || state.forecast;
+                        data.forecast?.forecastday || state.forecast;
                     state.locationName =
-                        action.payload.location?.name || state.locationName;
+                        data.location?.name || state.locationName;
+                    state._cachedTimestamp = payload.timestamp || null;
+                    state._cachedCity = payload.city || null;
+                    state._cachedDays = payload.days || null;
                 }
             });
     },

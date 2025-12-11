@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-    FlatList,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -9,76 +9,80 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import useDebounce from "../hooks/useDebounce";
-import {
-    clearSuggestions,
-    fetchForecast,
-    fetchSuggestions,
-} from "../store/weatherSlice";
+import { clearSuggestions, fetchSuggestions } from "../store/weatherSlice";
 
-export default function SearchBar() {
-    const [query, setQuery] = useState("");
+export default function SearchBar({ value, onQueryChange, onCitySelect }) {
+    const [query, setQuery] = useState(value ?? "");
     const dispatch = useDispatch();
-    const suggestions = useSelector((s) => s.weather.suggestions || []);
+    const suggestions = useSelector((s) => s.weather?.suggestions || []);
 
-    const debouncedSearch = useDebounce((text) => {
-        if (!text || text.length < 2) return;
-        dispatch(fetchSuggestions(text));
-    }, 400);
+    useEffect(() => {
+        if (typeof value === "string" && value !== query) {
+            setQuery(value);
+        }
+    }, [query, value]);
+
+    const debounced = useDebounce((txt) => {
+        if (!txt || txt.length < 1) {
+            dispatch(clearSuggestions());
+            return;
+        }
+        dispatch(fetchSuggestions(txt));
+    }, 350);
 
     const handleChange = (text) => {
         setQuery(text);
-        debouncedSearch(text);
+        if (onQueryChange) onQueryChange(text);
+        debounced(text);
     };
 
     const handleSelect = (item) => {
-        const cityName = item.name || item;
-        setQuery(`${item.name}, ${item.country}`);
-        dispatch(fetchForecast({ city: cityName, days: 3 }));
+        const cityName = item?.name || item;
+        const display = item?.country
+            ? `${item.name}, ${item.country}`
+            : cityName;
+        setQuery(display);
+        if (onQueryChange) onQueryChange(display);
+        if (onCitySelect) onCitySelect(cityName);
         dispatch(clearSuggestions());
     };
 
     return (
         <View style={styles.wrapper}>
-            <View style={styles.container}>
-                <TextInput
-                    placeholder="Search city..."
-                    placeholderTextColor="#888"
-                    style={styles.input}
-                    value={query}
-                    onChangeText={handleChange}
-                />
+            <TextInput
+                placeholder="Search city..."
+                placeholderTextColor="#888"
+                style={styles.input}
+                value={query}
+                onChangeText={handleChange}
+                autoCorrect={false}
+                returnKeyType="search"
+            />
 
-                <TouchableOpacity
-                    style={styles.button}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                        if (query)
-                            dispatch(fetchForecast({ city: query, days: 3 }));
-                        dispatch(clearSuggestions());
-                    }}
-                >
-                    <Text style={styles.buttonText}>Search</Text>
-                </TouchableOpacity>
-            </View>
-
-            {suggestions.length > 0 && (
+            {suggestions?.length > 0 && (
                 <View style={styles.dropdown}>
-                    <FlatList
-                        data={suggestions}
-                        keyExtractor={(item, idx) =>
-                            item?.id ? String(item.id) : `${item.name}-${idx}`
-                        }
-                        renderItem={({ item }) => (
+                    <ScrollView
+                        keyboardShouldPersistTaps="handled"
+                        nestedScrollEnabled={true}
+                        contentContainerStyle={{ paddingVertical: 4 }}
+                    >
+                        {suggestions.map((item, idx) => (
                             <TouchableOpacity
+                                key={
+                                    item?.id
+                                        ? String(item.id)
+                                        : `${item.name}-${idx}`
+                                }
                                 style={styles.dropdownItem}
                                 onPress={() => handleSelect(item)}
                             >
                                 <Text style={styles.dropdownText}>
-                                    {item.name}, {item.country}
+                                    {item.name}
+                                    {item.country ? `, ${item.country}` : ""}
                                 </Text>
                             </TouchableOpacity>
-                        )}
-                    />
+                        ))}
+                    </ScrollView>
                 </View>
             )}
         </View>
@@ -87,37 +91,29 @@ export default function SearchBar() {
 
 const styles = StyleSheet.create({
     wrapper: { width: "100%" },
-    container: { flexDirection: "row", alignItems: "center" },
     input: {
-        flex: 1,
-        height: 44,
+        height: 48,
         borderColor: "#d0d7e2",
         borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        backgroundColor: "#f4f6f9",
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        backgroundColor: "#f6f8fb",
+        fontSize: 16,
     },
-    button: {
-        marginLeft: 10,
-        backgroundColor: "#0b6efd",
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 8,
-    },
-    buttonText: { color: "#fff", fontWeight: "600" },
     dropdown: {
-        marginTop: 6,
+        marginTop: 8,
         borderWidth: 1,
-        borderColor: "#d0d7e2",
+        borderColor: "#e6eefc",
+        borderRadius: 10,
         backgroundColor: "#fff",
-        borderRadius: 8,
-        maxHeight: 160,
+        maxHeight: 200,
+        overflow: "hidden",
     },
     dropdownItem: {
-        paddingVertical: 10,
+        paddingVertical: 12,
         paddingHorizontal: 12,
         borderBottomWidth: 1,
-        borderBottomColor: "#f1f1f1",
+        borderBottomColor: "#f1f3f7",
     },
-    dropdownText: { fontSize: 14 },
+    dropdownText: { fontSize: 14, color: "#223" },
 });
