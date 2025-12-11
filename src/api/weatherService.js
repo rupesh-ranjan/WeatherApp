@@ -1,5 +1,5 @@
 import axios from "axios";
-import { WEATHER_API_KEY } from "../config.js";
+import { WEATHER_API_KEY } from "../config";
 
 const BASE_URL = "http://api.weatherapi.com/v1";
 

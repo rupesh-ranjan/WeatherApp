@@ -1,9 +1,42 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import { useSelector } from "react-redux";
 import ForecastCard from "../src/components/ForecastCard";
 import SearchBar from "../src/components/SearchBar";
 import WeatherCard from "../src/components/WeatherCard";
 
 export default function HomeScreen() {
+    const { current, forecast, loading, error, locationName } = useSelector(
+        (state: any) => state.weather || {}
+    );
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const cached = await AsyncStorage.getItem("lastWeather");
+                if (cached) {
+                    // TODO
+                }
+            } catch (e) {
+                // TODO cache errors
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        if (error) {
+            Alert.alert("Error", String(error));
+        }
+    }, [error]);
+
     return (
         <ScrollView contentContainerStyle={styles.root}>
             <View style={styles.header}>
@@ -12,54 +45,43 @@ export default function HomeScreen() {
 
             <SearchBar />
 
-            <WeatherCard
-                title="28°C — Sunny"
-                subtitle="New Delhi • Feels like 30°C"
-                iconUrl="https://cdn.weatherapi.com/weather/64x64/day/113.png"
-            />
+            {loading && (
+                <ActivityIndicator style={{ marginTop: 16 }} size="large" />
+            )}
 
-            <View style={{ marginTop: 20 }}>
-                <Text
-                    style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        marginBottom: 12,
-                    }}
-                >
-                    3-Day Forecast
-                </Text>
+            {error && <Text style={styles.errorText}>{String(error)}</Text>}
 
-                <View
-                    style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                    }}
-                >
-                    <ForecastCard
-                        date="Thu, 11 Dec"
-                        condition="Partly Cloudy"
-                        iconUrl="https://cdn.weatherapi.com/weather/64x64/day/116.png"
-                        max={30}
-                        min={20}
-                    />
+            {current && (
+                <WeatherCard
+                    title={`${current.temp_c}°C — ${current.condition?.text}`}
+                    subtitle={`${locationName || ""} • Feels like ${
+                        current.feelslike_c
+                    }°C`}
+                    iconUrl={`https:${current.condition?.icon}`}
+                />
+            )}
 
-                    <ForecastCard
-                        date="Fri, 12 Dec"
-                        condition="Cloudy"
-                        iconUrl="https://cdn.weatherapi.com/weather/64x64/day/122.png"
-                        max={28}
-                        min={19}
-                    />
+            {forecast?.length > 0 && (
+                <View style={styles.forecastSection}>
+                    <Text style={styles.sectionTitle}>3-Day Forecast</Text>
 
-                    <ForecastCard
-                        date="Sat, 13 Dec"
-                        condition="Showers"
-                        iconUrl="https://cdn.weatherapi.com/weather/64x64/day/308.png"
-                        max={26}
-                        min={18}
-                    />
+                    <View style={styles.forecastRow}>
+                        {forecast.map((day: any) => (
+                            <ForecastCard
+                                key={day.date}
+                                day={day}
+                                date={day.date}
+                                condition={day.day.condition?.text}
+                                iconUrl={`https:${day.day.condition?.icon}`}
+                                max={Math.round(day.day.maxtemp_c)}
+                                min={Math.round(day.day.mintemp_c)}
+                            />
+                        ))}
+                    </View>
                 </View>
-            </View>
+            )}
+
+            <View style={{ height: 80 }} />
         </ScrollView>
     );
 }
@@ -70,7 +92,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#ffffff",
         minHeight: "100%",
     },
-
     header: {
         marginBottom: 12,
     },
@@ -84,72 +105,12 @@ const styles = StyleSheet.create({
         color: "#556b86",
         marginTop: 4,
     },
-
-    searchWrap: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 14,
-        marginBottom: 18,
+    errorText: {
+        color: "red",
+        marginTop: 12,
     },
-    searchInput: {
-        flex: 1,
-        height: 44,
-        borderColor: "#e0e6ef",
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        backgroundColor: "#f6f8fb",
-    },
-    searchBtn: {
-        marginLeft: 10,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        backgroundColor: "#0b6efd",
-        borderRadius: 8,
-    },
-    searchBtnText: {
-        color: "#fff",
-        fontWeight: "600",
-    },
-
-    currentCard: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 14,
-        borderRadius: 12,
-        backgroundColor: "#f7fbff",
-        borderWidth: 1,
-        borderColor: "#e6eefc",
-        marginBottom: 16,
-    },
-    currentIcon: {
-        width: 72,
-        height: 72,
-        marginRight: 12,
-        borderRadius: 8,
-        backgroundColor: "#fff",
-    },
-    currentInfo: {
-        flex: 1,
-    },
-    currentTemp: {
-        fontSize: 24,
-        fontWeight: "700",
-        color: "#0b2545",
-    },
-    currentCond: {
-        fontSize: 14,
-        color: "#44607a",
-        marginTop: 4,
-    },
-    currentLocation: {
-        marginTop: 6,
-        fontSize: 13,
-        color: "#7a8ea0",
-    },
-
     forecastSection: {
-        marginTop: 6,
+        marginTop: 20,
     },
     sectionTitle: {
         fontSize: 16,
@@ -160,45 +121,5 @@ const styles = StyleSheet.create({
     forecastRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-    },
-    dayCard: {
-        width: "30%",
-        padding: 10,
-        borderRadius: 10,
-        backgroundColor: "#fff",
-        borderWidth: 1,
-        borderColor: "#f0f3f7",
-        alignItems: "center",
-    },
-    dayDate: {
-        fontSize: 12,
-        color: "#5d7388",
-        marginBottom: 8,
-        textAlign: "center",
-    },
-    dayIcon: {
-        width: 46,
-        height: 46,
-        marginBottom: 8,
-    },
-    dayCond: {
-        fontSize: 12,
-        color: "#5d7388",
-        textAlign: "center",
-    },
-    dayTemp: {
-        marginTop: 8,
-        fontSize: 12,
-        fontWeight: "600",
-        color: "#0b2545",
-    },
-
-    footer: {
-        marginTop: 20,
-        alignItems: "center",
-    },
-    footerText: {
-        fontSize: 13,
-        color: "#8899aa",
     },
 });

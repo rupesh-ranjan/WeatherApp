@@ -7,37 +7,34 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import useDebounce from "../hooks/useDebounce";
+import {
+    clearSuggestions,
+    fetchForecast,
+    fetchSuggestions,
+} from "../store/weatherSlice";
 
 export default function SearchBar() {
     const [query, setQuery] = useState("");
-    const [suggestions, setSuggestions] = useState([]);
+    const dispatch = useDispatch();
+    const suggestions = useSelector((s) => s.weather.suggestions || []);
 
-    const handleDebounce = useDebounce((text) => {
-        if (!text) {
-            setSuggestions([]);
-            return;
-        }
-
-        const staticResults = [
-            "London",
-            "Los Angeles",
-            "Lisbon",
-            "Luxembourg",
-            "Lahore",
-        ].filter((item) => item.toLowerCase().startsWith(text.toLowerCase()));
-
-        setSuggestions(staticResults);
+    const debouncedSearch = useDebounce((text) => {
+        if (!text || text.length < 2) return;
+        dispatch(fetchSuggestions(text));
     }, 400);
 
     const handleChange = (text) => {
         setQuery(text);
-        handleDebounce(text);
+        debouncedSearch(text);
     };
 
     const handleSelect = (item) => {
-        setQuery(item);
-        setSuggestions([]);
+        const cityName = item.name || item;
+        setQuery(`${item.name}, ${item.country}`);
+        dispatch(fetchForecast({ city: cityName, days: 3 }));
+        dispatch(clearSuggestions());
     };
 
     return (
@@ -51,7 +48,15 @@ export default function SearchBar() {
                     onChangeText={handleChange}
                 />
 
-                <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+                <TouchableOpacity
+                    style={styles.button}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                        if (query)
+                            dispatch(fetchForecast({ city: query, days: 3 }));
+                        dispatch(clearSuggestions());
+                    }}
+                >
                     <Text style={styles.buttonText}>Search</Text>
                 </TouchableOpacity>
             </View>
@@ -60,13 +65,17 @@ export default function SearchBar() {
                 <View style={styles.dropdown}>
                     <FlatList
                         data={suggestions}
-                        keyExtractor={(item) => item}
+                        keyExtractor={(item, idx) =>
+                            item?.id ? String(item.id) : `${item.name}-${idx}`
+                        }
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 style={styles.dropdownItem}
                                 onPress={() => handleSelect(item)}
                             >
-                                <Text style={styles.dropdownText}>{item}</Text>
+                                <Text style={styles.dropdownText}>
+                                    {item.name}, {item.country}
+                                </Text>
                             </TouchableOpacity>
                         )}
                     />
@@ -77,13 +86,8 @@ export default function SearchBar() {
 }
 
 const styles = StyleSheet.create({
-    wrapper: {
-        width: "100%",
-    },
-    container: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
+    wrapper: { width: "100%" },
+    container: { flexDirection: "row", alignItems: "center" },
     input: {
         flex: 1,
         height: 44,
@@ -100,15 +104,12 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 8,
     },
-    buttonText: {
-        color: "#fff",
-        fontWeight: "600",
-    },
+    buttonText: { color: "#fff", fontWeight: "600" },
     dropdown: {
         marginTop: 6,
         borderWidth: 1,
         borderColor: "#d0d7e2",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fff",
         borderRadius: 8,
         maxHeight: 160,
     },
@@ -118,7 +119,5 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#f1f1f1",
     },
-    dropdownText: {
-        fontSize: 14,
-    },
+    dropdownText: { fontSize: 14 },
 });

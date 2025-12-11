@@ -33,6 +33,20 @@ export const fetchSuggestions = createAsyncThunk(
     }
 );
 
+export const loadCached = createAsyncThunk(
+    "weather/loadCached",
+    async (_, { rejectWithValue }) => {
+        try {
+            const raw = await AsyncStorage.getItem("lastWeather");
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return parsed.data || null;
+        } catch (err) {
+            return rejectWithValue(err.message || "Failed to load cache");
+        }
+    }
+);
+
 const initialState = {
     current: null,
     forecast: [],
@@ -55,6 +69,9 @@ const weatherSlice = createSlice({
         clearError(state) {
             state.error = null;
         },
+        clearSuggestions(state) {
+            state.suggestions = [];
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -73,17 +90,21 @@ const weatherSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload || "Failed to fetch forecast";
             })
-            .addCase(fetchSuggestions.pending, (state) => {
-                // TODO set a small loading flag for suggestions
-            })
             .addCase(fetchSuggestions.fulfilled, (state, action) => {
                 state.suggestions = action.payload || [];
             })
-            .addCase(fetchSuggestions.rejected, (state, action) => {
-                // TODO keep suggestions unchanged on error
+            .addCase(loadCached.fulfilled, (state, action) => {
+                if (action.payload) {
+                    state.current = action.payload.current || state.current;
+                    state.forecast =
+                        action.payload.forecast?.forecastday || state.forecast;
+                    state.locationName =
+                        action.payload.location?.name || state.locationName;
+                }
             });
     },
 });
 
-export const { setFromCache, clearError } = weatherSlice.actions;
+export const { setFromCache, clearError, clearSuggestions } =
+    weatherSlice.actions;
 export default weatherSlice.reducer;
