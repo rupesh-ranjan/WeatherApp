@@ -153,7 +153,8 @@ export default function HomeScreen() {
                             activeOpacity={0.85}
                         >
                             <Text style={styles.dropdownPillText}>
-                                Forecast: {selectedDays}d
+                                Forecast: {selectedDays}day
+                                {selectedDays > 1 && "s"}
                             </Text>
                             <Text style={styles.chev}>
                                 {dropdownOpen ? "▴" : "▾"}
