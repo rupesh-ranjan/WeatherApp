@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import ForecastCard from "../src/components/ForecastCard";
 import SearchBar from "../src/components/SearchBar";
@@ -66,7 +67,7 @@ export default function HomeScreen() {
                     }
                 }
             } catch (error) {
-                console.log(`Error: ${error}`);
+                console.log(`Error reading cache: ${error}`);
             }
         })();
     }, []);
@@ -86,8 +87,8 @@ export default function HomeScreen() {
                 if (parsed?.days) {
                     setSelectedDays(Number(parsed.days));
                 }
-            } catch {
-                // ignore
+            } catch (error) {
+                console.log(`Error getting weather: ${error}`);
             }
         })();
     }, [current, forecast]);
@@ -118,57 +119,58 @@ export default function HomeScreen() {
     };
 
     return (
-        <ScrollView
-            contentContainerStyle={styles.root}
-            keyboardShouldPersistTaps="handled"
-        >
-            <View style={styles.header}>
-                <Text style={styles.title}>WeatherApp</Text>
-                <Text style={styles.subtitle}>
-                    Check current weather & forecast
-                </Text>
-                {formatted ? (
-                    <Text style={styles.updatedText}>
-                        Last updated: {formatted}
-                    </Text>
-                ) : null}
-            </View>
-            <SearchBar
-                value={typedQuery}
-                onQueryChange={(text) => {
-                    setTypedQuery(text);
-                    setSelectedCity(null);
-                }}
-                onCitySelect={(cityName) => {
-                    setSelectedCity(cityName);
-                    setTypedQuery(cityName);
-                }}
-            />
-
-            <View style={styles.row}>
-                <View style={styles.dropdownWrapper}>
-                    <TouchableOpacity
-                        style={styles.dropdownPill}
-                        onPress={() => setDropdownOpen((v) => !v)}
-                        activeOpacity={0.85}
-                    >
-                        <Text style={styles.dropdownPillText}>
-                            Forecast: {selectedDays}d
+        <SafeAreaView style={styles.safeArea}>
+            <ScrollView
+                contentContainerStyle={styles.root}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View style={styles.header}>
+                    <Text style={styles.title}>WeatherApp</Text>
+                    {formatted ? (
+                        <Text style={styles.updatedText}>
+                            Last updated: {formatted}
                         </Text>
-                        <Text style={styles.chev}>
-                            {dropdownOpen ? "▴" : "▾"}
-                        </Text>
-                    </TouchableOpacity>
+                    ) : null}
+                </View>
 
-                    {dropdownOpen && (
-                        <ScrollView
-                            style={styles.floatingList}
-                            contentContainerStyle={{ paddingVertical: 4 }}
-                            nestedScrollEnabled={true}
-                            keyboardShouldPersistTaps="handled"
+                <SearchBar
+                    value={typedQuery}
+                    onQueryChange={(text) => {
+                        setTypedQuery(text);
+                        setSelectedCity(null);
+                    }}
+                    onCitySelect={(cityName) => {
+                        setSelectedCity(cityName);
+                        setTypedQuery(cityName);
+                    }}
+                />
+
+                <View style={styles.row}>
+                    <View style={styles.dropdownWrapper}>
+                        <TouchableOpacity
+                            style={styles.dropdownPill}
+                            onPress={() => setDropdownOpen((v) => !v)}
+                            activeOpacity={0.85}
                         >
-                            {Array.from({ length: 14 }, (_, i) => i + 1).map(
-                                (num) => (
+                            <Text style={styles.dropdownPillText}>
+                                Forecast: {selectedDays}d
+                            </Text>
+                            <Text style={styles.chev}>
+                                {dropdownOpen ? "▴" : "▾"}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {dropdownOpen && (
+                            <ScrollView
+                                style={styles.floatingList}
+                                contentContainerStyle={{ paddingVertical: 4 }}
+                                nestedScrollEnabled={true}
+                                keyboardShouldPersistTaps="handled"
+                            >
+                                {Array.from(
+                                    { length: 14 },
+                                    (_, i) => i + 1
+                                ).map((num) => (
                                     <TouchableOpacity
                                         key={num}
                                         style={[
@@ -193,56 +195,55 @@ export default function HomeScreen() {
                                             {num} Day{num > 1 ? "s" : ""}
                                         </Text>
                                     </TouchableOpacity>
-                                )
-                            )}
-                        </ScrollView>
-                    )}
-                </View>
-
-                <TouchableOpacity
-                    style={styles.searchButton}
-                    onPress={handleSearchPress}
-                    activeOpacity={0.85}
-                >
-                    <Text style={styles.searchButtonText}>Search</Text>
-                </TouchableOpacity>
-            </View>
-            {loading && (
-                <ActivityIndicator style={{ marginTop: 16 }} size="large" />
-            )}
-            {error && <Text style={styles.errorText}>{String(error)}</Text>}
-            {current && (
-                <WeatherCard
-                    title={`${current.temp_c}°C — ${current.condition?.text}`}
-                    subtitle={`${locationName || ""} • Feels like ${
-                        current.feelslike_c
-                    }°C`}
-                    iconUrl={`https:${current.condition?.icon}`}
-                />
-            )}
-            {Array.isArray(forecast) && forecast.length > 0 && (
-                <View style={styles.forecastSection}>
-                    <Text style={styles.sectionTitle}>
-                        {selectedDays}-Day Forecast
-                    </Text>
-
-                    <View style={styles.forecastRow}>
-                        {forecast.map((day: any) => (
-                            <ForecastCard
-                                key={day.date}
-                                day={day}
-                                date={day.date}
-                                condition={day.day.condition?.text}
-                                iconUrl={`https:${day.day.condition?.icon}`}
-                                max={Math.round(day.day.maxtemp_c)}
-                                min={Math.round(day.day.mintemp_c)}
-                            />
-                        ))}
+                                ))}
+                            </ScrollView>
+                        )}
                     </View>
+
+                    <TouchableOpacity
+                        style={styles.searchButton}
+                        onPress={handleSearchPress}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.searchButtonText}>Search</Text>
+                    </TouchableOpacity>
                 </View>
-            )}
-            <View style={{ height: 80 }} />
-        </ScrollView>
+
+                {loading && (
+                    <ActivityIndicator style={{ marginTop: 16 }} size="large" />
+                )}
+
+                {error && <Text style={styles.errorText}>{String(error)}</Text>}
+
+                {current && (
+                    <WeatherCard
+                        title={`${current.temp_c}°C — ${current.condition?.text}`}
+                        subtitle={`${locationName || ""} • Feels like ${
+                            current.feelslike_c
+                        }°C`}
+                        iconUrl={`https:${current.condition?.icon}`}
+                    />
+                )}
+                {Array.isArray(forecast) && forecast.length > 0 && (
+                    <View style={styles.forecastSection}>
+                        <View style={styles.forecastRow}>
+                            {forecast.map((day: any) => (
+                                <ForecastCard
+                                    key={day.date}
+                                    day={day}
+                                    date={day.date}
+                                    condition={day.day.condition?.text}
+                                    iconUrl={`https:${day.day.condition?.icon}`}
+                                    max={Math.round(day.day.maxtemp_c)}
+                                    min={Math.round(day.day.mintemp_c)}
+                                />
+                            ))}
+                        </View>
+                    </View>
+                )}
+                <View style={{ height: 80 }} />
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
@@ -373,5 +374,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         flexWrap: "wrap",
         justifyContent: "space-between",
+        gap: 11,
     },
 });
