@@ -1,7 +1,7 @@
 import axios from "axios";
 import { WEATHER_API_KEY } from "../config";
 
-const BASE_URL = "http://api.weatherapi.com/v1";
+const BASE_URL = "https://api.weatherapi.com/v1";
 
 export const searchCities = async (query) => {
     const url = `${BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(
